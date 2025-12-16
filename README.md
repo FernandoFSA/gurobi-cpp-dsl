@@ -8,12 +8,12 @@ A modern C++20 domain-specific language (DSL) for building mathematical optimiza
 
 ## Features
 
-- **Mathematical Notation** — Write `sum(I, [&](int i) { return c[i] * x(i); })` instead of manual loops
-- **Type-Safe Indexing** — Cartesian products, filters, and multi-dimensional domains
-- **ModelBuilder Pattern** — Structured model construction with lifecycle hooks
-- **Dense & Sparse Variables** — `VariableGroup` for dense arrays, `IndexedVariableSet` for sparse
-- **Comprehensive Diagnostics** — IIS computation, solution analysis, model summaries
-- **QP Support** — `quadSum()` for quadratic programming objectives
+- **Mathematical Notation** - Write `sum(I, [&](int i) { return c[i] * x(i); })` instead of manual loops
+- **Type-Safe Indexing** - Cartesian products, filters, and multi-dimensional domains
+- **ModelBuilder Pattern** - Structured model construction with lifecycle hooks
+- **Dense and Sparse Variables** - `VariableGroup` for dense arrays, `IndexedVariableSet` for sparse
+- **Comprehensive Diagnostics** - IIS computation, solution analysis, model summaries
+- **QP Support** - `quadSum()` for quadratic programming objectives
 
 ## Quick Start
 
@@ -119,10 +119,10 @@ auto Y = dsl::VariableFactory::addIndexed(model, GRB_CONTINUOUS, 0, 1, "y",
 ### Expressions
 
 ```cpp
-// Linear: ?? c?x?
+// Linear: sum over i of c[i]*x[i]
 dsl::sum(I, [&](int i) { return c[i] * X(i); });
 
-// Quadratic: ??? ???x?x? (for QP)
+// Quadratic: sum over i,j of sigma[i][j]*x[i]*x[j] (for QP)
 dsl::quadSum(I * J, [&](int i, int j) { 
     return sigma[i][j] * X(i) * X(j); 
 });
@@ -170,17 +170,17 @@ See the [`examples/`](examples/) directory for complete examples:
 
 ```
 gurobi-cpp-dsl/
-??? include/
-?   ??? gurobi_dsl/        # Header-only library
-?       ??? dsl.h          # Main include
-?       ??? model_builder.h
-?       ??? variables.h
-?       ??? ...
-??? examples/              # 10 progressive examples
-??? tests/                 # Catch2 test suite
-??? CMakeLists.txt
-??? LICENSE
-??? README.md
++-- include/
+|   +-- gurobi_dsl/        # Header-only library
+|       +-- dsl.h          # Main include
+|       +-- model_builder.h
+|       +-- variables.h
+|       +-- ...
++-- examples/              # 10 progressive examples
++-- tests/                 # Catch2 test suite
++-- CMakeLists.txt
++-- LICENSE
++-- README.md
 ```
 
 ## Running Tests

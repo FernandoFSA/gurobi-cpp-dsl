@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - 2024-XX-XX
+## [1.0.0] - 2024-12-XX
 
 ### Added
 
@@ -91,7 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| 1.0.0 | TBD | Initial public release |
+| 1.0.0 | 2024-12 | Initial public release |
 
-[Unreleased]: https://github.com/FernandoFSA/MINI_DSL_GBR_CPP/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/FernandoFSA/MINI_DSL_GBR_CPP/releases/tag/v1.0.0
+[Unreleased]: https://github.com/FernandoFSA/gurobi-cpp-dsl/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/FernandoFSA/gurobi-cpp-dsl/releases/tag/v1.0.0

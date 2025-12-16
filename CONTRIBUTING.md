@@ -47,10 +47,6 @@ cmake --build .
 ctest --output-on-failure
 ```
 
-### Visual Studio
-
-Open `MINI_DSL_GBR_CPP.vcxproj` and build the solution.
-
 ## Coding Style
 
 ### General Guidelines
@@ -119,7 +115,7 @@ ctest --output-on-failure
 
 ### Writing Tests
 
-- Use **Catch2** (amalgamated version in `dsl/tests/`)
+- Use **Catch2** (amalgamated version in `tests/`)
 - Follow existing test organization (sections A-J, etc.)
 - Use descriptive test names: `"A1: SumLambda::Sum1DIndexList"`
 - Include `@covers` tags for traceability
@@ -152,4 +148,4 @@ Open an issue with the "question" label or start a discussion.
 
 ---
 
-Thank you for contributing! ??
+Thank you for contributing!
