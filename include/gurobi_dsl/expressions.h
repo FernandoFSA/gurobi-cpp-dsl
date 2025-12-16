@@ -1,7 +1,7 @@
 #pragma once
 /*
 ===============================================================================
-EXPRESSIONS — Lightweight helpers for constructing GRBLinExpr and GRBQuadExpr
+EXPRESSIONS ï¿½ Lightweight helpers for constructing GRBLinExpr and GRBQuadExpr
 ===============================================================================
 
 OVERVIEW
@@ -13,22 +13,24 @@ which iterate over DSL index domains and evaluate user-provided lambdas.
 
 KEY COMPONENTS
 --------------
-• sum(Range, Func): Domain-based linear summation with user-provided lambda
-• sum(IndexedVariableSet): Full summation over sparse variable sets
-• sum(Range, IndexedVariableSet): Domain-filtered sparse variable summation
-• sum(VariableGroup): Full summation over dense variable groups
-• sum(Range, VariableGroup): Domain-filtered dense variable summation
-• quadSum(Range, Func): Domain-based quadratic summation for QP objectives
-• expr_detail::invoke_on_index(): Internal tuple unpacking helper
-• expr_detail::add_term(): Internal term accumulation helper
+- sum(Range, Func): Domain-based linear summation with user-provided lambda
+- sum(IndexedVariableSet): Full summation over sparse variable sets
+- sum(Range, IndexedVariableSet): Domain-filtered sparse variable summation
+- sum(VariableGroup): Full summation over dense variable groups
+- sum(Range, VariableGroup): Domain-filtered dense variable summation
+- sum(VariableContainer): Unified summation over dense or sparse containers
+- sum(Range, VariableContainer): Domain-filtered unified container summation
+- quadSum(Range, Func): Domain-based quadratic summation for QP objectives
+- expr_detail::invoke_on_index(): Internal tuple unpacking helper
+- expr_detail::add_term(): Internal term accumulation helper
 
 DESIGN PHILOSOPHY
 -----------------
-• Thin layer: Defers directly to Gurobi's GRBLinExpr type
-• Mathematical alignment: Models sum_{i in I} f(i) notation
-• Automatic unpacking: Handles both scalar (int) and tuple indices
-• Zero ownership: Builds new GRBLinExpr on each call; no caching
-• Future-proof: Central point for expression type upgrades
+ï¿½ Thin layer: Defers directly to Gurobi's GRBLinExpr type
+ï¿½ Mathematical alignment: Models sum_{i in I} f(i) notation
+ï¿½ Automatic unpacking: Handles both scalar (int) and tuple indices
+ï¿½ Zero ownership: Builds new GRBLinExpr on each call; no caching
+ï¿½ Future-proof: Central point for expression type upgrades
 
 CONCEPTUAL MODEL
 ----------------
@@ -56,32 +58,32 @@ USAGE EXAMPLES
 
 DEPENDENCIES
 ------------
-• <type_traits>, <utility>, <tuple>, <functional> - Metaprogramming
-• gurobi_c++.h - GRBLinExpr, GRBVar types
-• indexing.h - Index domain types, is_tuple_like_v trait
+ï¿½ <type_traits>, <utility>, <tuple>, <functional> - Metaprogramming
+ï¿½ gurobi_c++.h - GRBLinExpr, GRBVar types
+ï¿½ indexing.h - Index domain types, is_tuple_like_v trait
 
 PERFORMANCE NOTES
 -----------------
-• sum(Range, Func): O(n) where n = number of elements in range
-• sum(IndexedVariableSet): O(n) where n = number of stored variables
-• sum(VariableGroup): O(n) where n = total variables in dense structure
-• Memory: No dynamic allocation beyond GRBLinExpr internal growth
-• GRBLinExpr: Amortized O(1) per += operation
+ï¿½ sum(Range, Func): O(n) where n = number of elements in range
+ï¿½ sum(IndexedVariableSet): O(n) where n = number of stored variables
+ï¿½ sum(VariableGroup): O(n) where n = total variables in dense structure
+ï¿½ Memory: No dynamic allocation beyond GRBLinExpr internal growth
+ï¿½ GRBLinExpr: Amortized O(1) per += operation
 
 THREAD SAFETY
 -------------
-• All functions are thread-safe for concurrent calls with distinct outputs
-• No shared mutable state between invocations
-• GRBLinExpr operations follow Gurobi's threading guarantees
-• Lambda captures are user's responsibility for thread safety
+ï¿½ All functions are thread-safe for concurrent calls with distinct outputs
+ï¿½ No shared mutable state between invocations
+ï¿½ GRBLinExpr operations follow Gurobi's threading guarantees
+ï¿½ Lambda captures are user's responsibility for thread safety
 
 EXCEPTION SAFETY
 ----------------
-• sum(Range, Func): Strong guarantee; propagates lambda exceptions
-• sum(IndexedVariableSet): Strong guarantee; no throwing operations
-• sum(Range, IndexedVariableSet): Throws std::out_of_range for invalid indices
-• sum(VariableGroup): Strong guarantee; no throwing operations
-• sum(Range, VariableGroup): Throws std::out_of_range for invalid indices
+ï¿½ sum(Range, Func): Strong guarantee; propagates lambda exceptions
+ï¿½ sum(IndexedVariableSet): Strong guarantee; no throwing operations
+ï¿½ sum(Range, IndexedVariableSet): Throws std::out_of_range for invalid indices
+ï¿½ sum(VariableGroup): Strong guarantee; no throwing operations
+ï¿½ sum(Range, VariableGroup): Throws std::out_of_range for invalid indices
 
 ===============================================================================
 */
@@ -93,6 +95,7 @@ EXCEPTION SAFETY
 
 #include "gurobi_c++.h"
 #include "indexing.h"
+#include "variables.h"
 
 namespace dsl {
 
@@ -350,6 +353,85 @@ namespace dsl {
     {
         auto fn = [&](auto&&... args) -> const GRBVar& {
             return vSet(args...);
+        };
+
+        return sum(rng, fn);
+    }
+
+    /**
+     * @brief Sums all variables in a VariableContainer (dense or sparse)
+     *
+     * @details Unified summation that works for both VariableGroup (dense) and
+     *          IndexedVariableSet (sparse) storage modes. Iterates over all
+     *          variables in the container regardless of storage type.
+     *
+     *          Semantically implements: sum over all variables in container
+     *
+     * @param vc VariableContainer holding either dense or sparse variables
+     *
+     * @return GRBLinExpr containing sum of all stored variables
+     *
+     * @throws std::runtime_error if container is empty
+     * @complexity O(n) where n = total number of variables in container
+     *
+     * @note Useful when working with VariableTable entries
+     * @note Safe for both dense and sparse storage modes
+     *
+     * @example
+     *     // With VariableTable
+     *     VariableTable<Vars> vt;
+     *     vt.set(Vars::X, std::move(denseVars));
+     *     vt.set(Vars::Y, std::move(sparseVars));
+     *     
+     *     GRBLinExpr sumX = dsl::sum(vt.get(Vars::X));  // Works for dense
+     *     GRBLinExpr sumY = dsl::sum(vt.get(Vars::Y));  // Works for sparse
+     *
+     * @see VariableContainer, VariableGroup, IndexedVariableSet
+     */
+    inline GRBLinExpr sum(const VariableContainer& vc)
+    {
+        GRBLinExpr expr = 0.0;
+
+        vc.forEach([&](const GRBVar& v, const std::vector<int>&) {
+            expr += v;
+        });
+
+        return expr;
+    }
+
+    /**
+     * @brief Sums VariableContainer variables over a specified index domain
+     *
+     * @details Iterates over each element in the range and accesses the corresponding
+     *          variable in the container. Works for both dense and sparse storage.
+     *          Tuple indices are automatically unpacked.
+     *
+     *          Semantically implements: sum_{idx in Range} vc(idx...)
+     *
+     * @tparam Range Iterable type with begin()/end() yielding int or tuple<int,...>
+     * @param rng Index domain specifying which variables to sum
+     * @param vc VariableContainer to access
+     *
+     * @return GRBLinExpr containing sum of variables for specified indices
+     *
+     * @throws std::out_of_range if any index is out of bounds or not found
+     * @throws std::runtime_error if container is empty
+     * @complexity O(n) where n = number of elements in rng
+     *
+     * @note Uses invoke_on_index for automatic tuple unpacking
+     * @note Works with both dense and sparse storage modes
+     *
+     * @example
+     *     auto expr = dsl::sum(I, vc);        // 1D domain
+     *     auto expr = dsl::sum(I * J, vc);    // 2D domain
+     *
+     * @see VariableContainer, sum(Range, Func)
+     */
+    template<typename Range>
+    GRBLinExpr sum(const Range& rng, const VariableContainer& vc)
+    {
+        auto fn = [&](auto&&... args) -> const GRBVar& {
+            return vc.at(args...);
         };
 
         return sum(rng, fn);
