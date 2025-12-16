@@ -373,8 +373,16 @@ dsl::quadSum(I * J, [&](int i, int j) {                 // sum_{i,j} sigma[i,j]*
 
 ### Constraints
 ```cpp
-// Domain-based creation
-auto cons = dsl::ConstraintFactory::addIndexed(model, "name", domain,
+// Single constraint
+auto con = dsl::ConstraintFactory::add(model, "name",
+    [&](auto) { return expr <= rhs; });
+
+// Dense (indexed over rectangular domain)
+auto cons = dsl::ConstraintFactory::addIndexed(model, "name", I * J,
+    [&](int i, int j) { return expr <= rhs; });
+
+// Sparse (indexed over filtered domain)
+auto sparse = dsl::ConstraintFactory::addIndexed(model, "name", filteredDomain,
     [&](int i, int j) { return expr <= rhs; });
 ```
 
