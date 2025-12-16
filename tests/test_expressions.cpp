@@ -1,6 +1,6 @@
 /*
 ===============================================================================
-TEST EXPRESSIONS — Comprehensive tests for expressions.h
+TEST EXPRESSIONS ï¿½ Comprehensive tests for expressions.h
 ===============================================================================
 
 OVERVIEW
@@ -12,35 +12,35 @@ coefficient handling, and error handling for missing indices.
 
 TEST ORGANIZATION
 -----------------
-• Section A: Basic sum() over rectangular VariableGroup with lambdas
-• Section B: IndexedVariableSet integrity tests for lookup and tuple behavior
-• Section C: sum(D, IndexedVariableSet) domain-based lookups
-• Section D: Tuple-based Cartesian indexing (2D and 3D)
-• Section E: VariableGroup sum overloads and const-correctness
-• Section F: Expression composition and coefficients
-• Section G: Edge cases and boundary conditions
-• Section H: Error scenarios and exception handling
-• Section I: Iterator properties and performance
-• Section J: Quadratic sum (quadSum) for QP objectives
+ï¿½ Section A: Basic sum() over rectangular VariableGroup with lambdas
+ï¿½ Section B: IndexedVariableSet integrity tests for lookup and tuple behavior
+ï¿½ Section C: sum(D, IndexedVariableSet) domain-based lookups
+ï¿½ Section D: Tuple-based Cartesian indexing (2D and 3D)
+ï¿½ Section E: VariableGroup sum overloads and const-correctness
+ï¿½ Section F: Expression composition and coefficients
+ï¿½ Section G: Edge cases and boundary conditions
+ï¿½ Section H: Error scenarios and exception handling
+ï¿½ Section I: Iterator properties and performance
+ï¿½ Section J: Quadratic sum (quadSum) for QP objectives
 
 TEST STRATEGY
 -------------
-• Verify expression construction without full optimization where possible
-• Confirm domain iteration order and tuple unpacking correctness
-• Exercise coefficient handling: positive, negative, zero, index-dependent
-• Validate expression composition: combining sums, constant terms, nesting
-• Test boundary conditions: empty domains, single elements, large domains
-• Validate exception behavior for missing indices and type mismatches
-• Exercise both lambda-based and direct variable set summation
-• Confirm iterator reusability across multiple passes
+ï¿½ Verify expression construction without full optimization where possible
+ï¿½ Confirm domain iteration order and tuple unpacking correctness
+ï¿½ Exercise coefficient handling: positive, negative, zero, index-dependent
+ï¿½ Validate expression composition: combining sums, constant terms, nesting
+ï¿½ Test boundary conditions: empty domains, single elements, large domains
+ï¿½ Validate exception behavior for missing indices and type mismatches
+ï¿½ Exercise both lambda-based and direct variable set summation
+ï¿½ Confirm iterator reusability across multiple passes
 
 DEPENDENCIES
 ------------
-• Catch2 v3.0+ - Test framework
-• Gurobi C++ API - Optimization modeling
-• expressions.h - System under test
-• variables.h - Variable creation utilities
-• indexing.h - Domain and index utilities
+ï¿½ Catch2 v3.0+ - Test framework
+ï¿½ Gurobi C++ API - Optimization modeling
+ï¿½ expressions.h - System under test
+ï¿½ variables.h - Variable creation utilities
+ï¿½ indexing.h - Domain and index utilities
 
 ===============================================================================
 */
@@ -522,7 +522,7 @@ TEST_CASE("E3: VariableGroupSum::TupleExpansion", "[expressions][sum][cartesian]
 
     GRBLinExpr expr = dsl::sum(I * J, X);
 
-    REQUIRE(expr.size() == 6); // 2×3
+    REQUIRE(expr.size() == 6); // 2ï¿½3
 
     model.addConstr(expr == 5, "c1");
     model.setObjective(expr, GRB_MAXIMIZE);
@@ -619,6 +619,146 @@ TEST_CASE("E6: VariableGroupSum::DomainOrderRespected", "[expressions][sum][orde
         REQUIRE(expr.getVar(1).get(GRB_StringAttr_VarName) == "B_1");
         REQUIRE(expr.getVar(2).get(GRB_StringAttr_VarName) == "B_0");
     }
+}
+
+/**
+ * @test VariableContainerSum::SumDenseContainer
+ * @brief Verifies sum(VariableContainer) works for dense storage
+ *
+ * @scenario Sum over VariableContainer holding a VariableGroup
+ * @given A VariableContainer with dense 2D variables
+ * @when Applying sum(container)
+ * @then Expression contains all variables
+ *
+ * @covers dsl::sum(VariableContainer) with dense storage
+ */
+TEST_CASE("E7: VariableContainerSum::SumDenseContainer", "[expressions][sum][container]")
+{
+    GRBModel model = makeModel();
+
+    auto X = dsl::VariableFactory::add(model, GRB_CONTINUOUS, 0, 1, "X", 2, 3);
+    model.update();
+
+    dsl::VariableContainer vc(std::move(X));
+
+    GRBLinExpr expr = dsl::sum(vc);
+
+    REQUIRE(expr.size() == 6); // 2x3 = 6 variables
+}
+
+/**
+ * @test VariableContainerSum::SumSparseContainer
+ * @brief Verifies sum(VariableContainer) works for sparse storage
+ *
+ * @scenario Sum over VariableContainer holding an IndexedVariableSet
+ * @given A VariableContainer with sparse filtered variables
+ * @when Applying sum(container)
+ * @then Expression contains all sparse variables
+ *
+ * @covers dsl::sum(VariableContainer) with sparse storage
+ */
+TEST_CASE("E8: VariableContainerSum::SumSparseContainer", "[expressions][sum][container]")
+{
+    GRBModel model = makeModel();
+
+    auto I = dsl::range_view(0, 3);
+    auto J = dsl::range_view(0, 3);
+    auto F = (I * J) | dsl::filter([](int i, int j) { return i < j; });
+
+    auto XV = dsl::VariableFactory::addIndexed(model, GRB_CONTINUOUS, 0, 1, "Y", F);
+    model.update();
+
+    dsl::VariableContainer vc(std::move(XV));
+
+    GRBLinExpr expr = dsl::sum(vc);
+
+    REQUIRE(expr.size() == 3); // (0,1), (0,2), (1,2)
+}
+
+/**
+ * @test VariableContainerSum::SumMatchesDirectCall
+ * @brief Verifies sum(VariableContainer) matches sum(VariableGroup)
+ *
+ * @scenario Compare container sum with direct group sum
+ * @given Same variables in container and direct group
+ * @when Comparing sum(container) with sum(group)
+ * @then Both expressions have equal size
+ *
+ * @covers dsl::sum(VariableContainer) consistency
+ */
+TEST_CASE("E9: VariableContainerSum::SumMatchesDirectCall", "[expressions][sum][container]")
+{
+    GRBModel model = makeModel();
+
+    auto X = dsl::VariableFactory::add(model, GRB_CONTINUOUS, 0, 1, "X", 4);
+    model.update();
+
+    // Direct sum on VariableGroup
+    GRBLinExpr directExpr = dsl::sum(X);
+
+    // Sum via VariableContainer
+    dsl::VariableContainer vc(X); // copy
+    GRBLinExpr containerExpr = dsl::sum(vc);
+
+    REQUIRE(directExpr.size() == containerExpr.size());
+    REQUIRE(directExpr.size() == 4);
+}
+
+/**
+ * @test VariableContainerSum::SumDomainDenseContainer
+ * @brief Verifies sum(Range, VariableContainer) works for dense storage
+ *
+ * @scenario Sum over subset of VariableContainer using domain
+ * @given A VariableContainer with dense 1D variables
+ * @when Applying sum(domain, container)
+ * @then Expression contains only domain-specified variables
+ *
+ * @covers dsl::sum(Range, VariableContainer) with dense storage
+ */
+TEST_CASE("E10: VariableContainerSum::SumDomainDenseContainer", "[expressions][sum][container]")
+{
+    GRBModel model = makeModel();
+
+    auto X = dsl::VariableFactory::add(model, GRB_CONTINUOUS, 0, 1, "X", 5);
+    model.update();
+
+    dsl::VariableContainer vc(std::move(X));
+
+    dsl::IndexList subset{ 1, 3 };
+    GRBLinExpr expr = dsl::sum(subset, vc);
+
+    REQUIRE(expr.size() == 2);
+}
+
+/**
+ * @test VariableContainerSum::SumDomainSparseContainer
+ * @brief Verifies sum(Range, VariableContainer) works for sparse storage
+ *
+ * @scenario Sum over subset of sparse VariableContainer using domain
+ * @given A VariableContainer with sparse 2D variables
+ * @when Applying sum(domain, container)
+ * @then Expression contains only domain-specified variables
+ *
+ * @covers dsl::sum(Range, VariableContainer) with sparse storage
+ */
+TEST_CASE("E11: VariableContainerSum::SumDomainSparseContainer", "[expressions][sum][container]")
+{
+    GRBModel model = makeModel();
+
+    auto I = dsl::range_view(0, 3);
+    auto J = dsl::range_view(0, 3);
+    auto fullDomain = I * J;
+
+    auto XV = dsl::VariableFactory::addIndexed(model, GRB_CONTINUOUS, 0, 1, "Y", fullDomain);
+    model.update();
+
+    dsl::VariableContainer vc(std::move(XV));
+
+    // Sum only upper triangular
+    auto subset = (I * J) | dsl::filter([](int i, int j) { return i < j; });
+    GRBLinExpr expr = dsl::sum(subset, vc);
+
+    REQUIRE(expr.size() == 3); // (0,1), (0,2), (1,2)
 }
 
 // ============================================================================
@@ -991,7 +1131,7 @@ TEST_CASE("H2: ErrorHandling::DimensionMismatchIndexedThrows", "[expressions][er
     dsl::IndexList wrong{ 0,1 };
 
     REQUIRE_THROWS(
-        dsl::sum(wrong, XV) // XV(i) is invalid — must throw
+        dsl::sum(wrong, XV) // XV(i) is invalid ï¿½ must throw
     );
 }
 
