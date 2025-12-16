@@ -30,19 +30,19 @@ A factory produces 3 products using 2 machines. Maximize profit subject to machi
 
 ### Mathematical Model
 ```
-max  ?_p profit[p] * x[p]
-s.t. ?_p hours[m,p] * x[p] ? capacity[m]   ?m
-     x[p] ? 0
+max  sum_p profit[p] * x[p]
+s.t. sum_p hours[m,p] * x[p] <= capacity[m]   for all m
+     x[p] >= 0
 ```
 
 ### DSL Features
-- `dsl::range(0, n)` — Create index domains
-- `dsl::sum(domain, lambda)` — Mathematical summation
-- `VariableFactory::add()` — Create variable arrays
-- `ConstraintFactory::addIndexed()` — Domain-based constraints
-- `maximize()` — Objective helper
-- `slack()`, `dual()` — LP sensitivity (shadow prices)
-- `statusString()`, `modelSummary()` — Diagnostics
+- `dsl::range(0, n)` - Create index domains
+- `dsl::sum(domain, lambda)` - Mathematical summation
+- `VariableFactory::add()` - Create variable arrays
+- `ConstraintFactory::addIndexed()` - Domain-based constraints
+- `maximize()` - Objective helper
+- `slack()`, `dual()` - LP sensitivity (shadow prices)
+- `statusString()`, `modelSummary()` - Diagnostics
 
 ---
 
@@ -57,20 +57,20 @@ Select items for a backpack to maximize value while respecting capacity. Some it
 
 ### Mathematical Model
 ```
-max  ?_i value[i] * x[i]
-s.t. ?_i weight[i] * x[i] ? capacity
-     x[i] + x[j] ? 1              ?(i,j) ? Conflicts
-     x[i] ? {0,1}
+max  sum_i value[i] * x[i]
+s.t. sum_i weight[i] * x[i] <= capacity
+     x[i] + x[j] <= 1              for all (i,j) in Conflicts
+     x[i] in {0,1}
 ```
 
 ### DSL Features
-- `ModelBuilder<VarEnum, ConEnum>` — Template method pattern
-- `DECLARE_ENUM_WITH_COUNT` — Type-safe enum keys
-- `applyPreset(Preset::Fast)` — Parameter presets
-- `mipGapLimit()` — MIP gap settings
-- `DataStore` — Metadata storage
-- `fix()`, `unfix()` — What-if analysis
-- `hasSolution()`, `objVal()`, `mipGap()` — Solution diagnostics
+- `ModelBuilder<VarEnum, ConEnum>` - Template method pattern
+- `DECLARE_ENUM_WITH_COUNT` - Type-safe enum keys
+- `applyPreset(Preset::Fast)` - Parameter presets
+- `mipGapLimit()` - MIP gap settings
+- `DataStore` - Metadata storage
+- `fix()`, `unfix()` - What-if analysis
+- `hasSolution()`, `objVal()`, `mipGap()` - Solution diagnostics
 
 ---
 
@@ -85,17 +85,17 @@ Ship goods from warehouses to stores minimizing transportation cost while meetin
 
 ### Mathematical Model
 ```
-min  ?_{w,s} cost[w,s] * x[w,s]
-s.t. ?_s x[w,s] ? supply[w]        ?w  (Supply)
-     ?_w x[w,s] ? demand[s]        ?s  (Demand)
-     x[w,s] ? 0
+min  sum_{w,s} cost[w,s] * x[w,s]
+s.t. sum_s x[w,s] <= supply[w]        for all w  (Supply)
+     sum_w x[w,s] >= demand[s]        for all s  (Demand)
+     x[w,s] >= 0
 ```
 
 ### DSL Features
 - Two-dimensional variables `X(w, s)`
-- `W * S` — Cartesian product domains
+- `W * S` - Cartesian product domains
 - Multiple constraint families (Supply, Demand)
-- `minimize()` — Objective helper
+- `minimize()` - Objective helper
 - Dual values interpretation for marginal costs
 
 ---
@@ -113,18 +113,18 @@ Assign workers to tasks minimizing cost. Workers have qualifications for specifi
 ```
 Let Q = {(w,t) : qualified[w,t] = 1}
 
-min  ?_{(w,t) ? Q} cost[w,t] * x[w,t]
-s.t. ?_{w:(w,t)?Q} x[w,t] = 1      ?t  (Task coverage)
-     ?_{t:(w,t)?Q} x[w,t] ? 1      ?w  (Worker limit)
-     x[w,t] ? {0,1}
+min  sum_{(w,t) in Q} cost[w,t] * x[w,t]
+s.t. sum_{w:(w,t) in Q} x[w,t] = 1      for all t  (Task coverage)
+     sum_{t:(w,t) in Q} x[w,t] <= 1     for all w  (Worker limit)
+     x[w,t] in {0,1}
 ```
 
 ### DSL Features
-- `(W * T) | dsl::filter(predicate)` — Filtered Cartesian domains
-- `IndexedVariableSet` — Sparse variable structures
-- `IndexedConstraintSet` — Domain-based constraints
-- `try_get()` — Safe sparse access
-- `computeIIS()` — Infeasibility analysis
+- `(W * T) | dsl::filter(predicate)` - Filtered Cartesian domains
+- `IndexedVariableSet` - Sparse variable structures
+- `IndexedConstraintSet` - Domain-based constraints
+- `try_get()` - Safe sparse access
+- `computeIIS()` - Infeasibility analysis
 
 ---
 
@@ -139,18 +139,18 @@ Decide which facilities to open and how to assign customers to minimize fixed + 
 
 ### Mathematical Model
 ```
-min  ?_f fixedCost[f]*y[f] + ?_{f,c} transCost[f,c]*demand[c]*x[f,c]
-s.t. ?_f x[f,c] = 1                              ?c  (Demand)
-     ?_c demand[c]*x[f,c] ? capacity[f]*y[f]     ?f  (Capacity)
-     x[f,c] ? y[f]                               ?f,c (Linking)
-     y[f] ? {0,1}, x[f,c] ? [0,1]
+min  sum_f fixedCost[f]*y[f] + sum_{f,c} transCost[f,c]*demand[c]*x[f,c]
+s.t. sum_f x[f,c] = 1                              for all c  (Demand)
+     sum_c demand[c]*x[f,c] <= capacity[f]*y[f]    for all f  (Capacity)
+     x[f,c] <= y[f]                                for all f,c (Linking)
+     y[f] in {0,1}, x[f,c] in [0,1]
 ```
 
 ### DSL Features
 - Multiple variable groups (binary `y[f]`, continuous `x[f,c]`)
-- Linking constraints `x ? y`
+- Linking constraints `x <= y`
 - Capacity with binary variables
-- `timeLimit()` — Solve time management
+- `timeLimit()` - Solve time management
 
 ---
 
@@ -165,16 +165,16 @@ Design a minimum-cost diet meeting nutritional requirements with min/max bounds 
 
 ### Mathematical Model
 ```
-min  ?_f cost[f] * x[f]
-s.t. ?_f nutrients[f,n] * x[f] ? minIntake[n]    ?n
-     ?_f nutrients[f,n] * x[f] ? maxIntake[n]    ?n
-     x[f] ? [0, maxServings[f]]
+min  sum_f cost[f] * x[f]
+s.t. sum_f nutrients[f,n] * x[f] >= minIntake[n]    for all n
+     sum_f nutrients[f,n] * x[f] <= maxIntake[n]    for all n
+     x[f] in [0, maxServings[f]]
 ```
 
 ### DSL Features
-- Range constraints (min ? expr ? max)
+- Range constraints (min <= expr <= max)
 - Multiple constraint types (min/max bounds)
-- `setUB()` — Bound modification
+- `setUB()` - Bound modification
 - Dual values interpretation for nutrition constraints
 
 ---
@@ -190,17 +190,17 @@ Schedule jobs on a single machine to minimize total weighted tardiness.
 
 ### Mathematical Model
 ```
-min  ?_j penalty[j] * tardy[j]
-s.t. tardy[j] ? start[j] + processing[j] - due[j]
-     start[j] ? start[i] + processing[i] - M*(1-before[i,j])   ?i<j
-     start[i] ? start[j] + processing[j] - M*before[i,j]       ?i<j
-     before[i,j] ? {0,1}
+min  sum_j penalty[j] * tardy[j]
+s.t. tardy[j] >= start[j] + processing[j] - due[j]
+     start[j] >= start[i] + processing[i] - M*(1-before[i,j])   for all i<j
+     start[i] >= start[j] + processing[j] - M*before[i,j]       for all i<j
+     before[i,j] in {0,1}
 ```
 
 ### DSL Features
 - Big-M constraints for disjunctive scheduling
 - Auxiliary variables (tardiness linearization)
-- `setStart()` — Warm-start hints (EDD heuristic)
+- `setStart()` - Warm-start hints (EDD heuristic)
 - Filtered pair domain `i < j`
 - Visual Gantt-style output
 
@@ -217,14 +217,14 @@ Allocate capital to minimize portfolio variance while meeting a minimum return t
 
 ### Mathematical Model
 ```
-min  ?_{a,b} sigma[a,b] * x[a] * x[b]    (Variance)
-s.t. ?_a x[a] = 1                         (Budget)
-     ?_a mu[a] * x[a] ? minReturn         (Return target)
-     x[a] ? [0, maxAllocation]
+min  sum_{a,b} sigma[a,b] * x[a] * x[b]    (Variance)
+s.t. sum_a x[a] = 1                         (Budget)
+     sum_a mu[a] * x[a] >= minReturn        (Return target)
+     x[a] in [0, maxAllocation]
 ```
 
 ### DSL Features
-- `dsl::quadSum()` — Quadratic expression construction
+- `dsl::quadSum()` - Quadratic expression construction
 - Covariance matrix handling
 - Efficient frontier computation
 - Risk-return trade-off analysis
@@ -243,12 +243,12 @@ Route vehicles from depot to customers minimizing total distance with capacity c
 
 ### Mathematical Model
 ```
-min  ?_{i,j,k} dist[i,j] * x[i,j,k]
-s.t. ?_{j,k} x[i,j,k] = 1                              ?i?C  (Visit)
-     ?_i x[i,j,k] = ?_i x[j,i,k]                       ?j,k  (Flow)
-     ?_j x[0,j,k] ? 1                                  ?k    (Depot)
-     u[j,k] ? u[i,k] + demand[j] - M*(1-x[i,j,k])      MTZ
-     x[i,j,k] ? {0,1}
+min  sum_{i,j,k} dist[i,j] * x[i,j,k]
+s.t. sum_{j,k} x[i,j,k] = 1                              for all i in C  (Visit)
+     sum_i x[i,j,k] = sum_i x[j,i,k]                     for all j,k  (Flow)
+     sum_j x[0,j,k] <= 1                                 for all k    (Depot)
+     u[j,k] >= u[i,k] + demand[j] - M*(1-x[i,j,k])       MTZ
+     x[i,j,k] in {0,1}
 ```
 
 ### DSL Features
@@ -271,9 +271,9 @@ Cut stock rolls to fulfill orders minimizing rolls used or total waste.
 
 ### Mathematical Model
 ```
-min  ?_p x[p]   or   min ?_p waste[p] * x[p]
-s.t. ?_p pattern[p,i] * x[p] ? demand[i]    ?i
-     x[p] ? Z+
+min  sum_p x[p]   or   min sum_p waste[p] * x[p]
+s.t. sum_p pattern[p,i] * x[p] >= demand[i]    for all i
+     x[p] in Z+
 ```
 
 ### DSL Features
@@ -360,13 +360,13 @@ auto Y = dsl::VariableFactory::addIndexed(model, GRB_CONTINUOUS, 0, 1, "Y", filt
 
 ### Expressions
 ```cpp
-dsl::sum(I, [&](int i) { return c[i] * X(i); });        // ?_i c[i]*x[i]
-dsl::sum(I * J, [&](int i, int j) { return X(i,j); });  // ?_{i,j} x[i,j]
+dsl::sum(I, [&](int i) { return c[i] * X(i); });        // sum_i c[i]*x[i]
+dsl::sum(I * J, [&](int i, int j) { return X(i,j); });  // sum_{i,j} x[i,j]
 dsl::sum(X);                                             // Sum all variables
 
 // Quadratic expressions (for QP objectives)
-dsl::quadSum(I, [&](int i) { return X(i) * X(i); });    // ?_i x[i]²
-dsl::quadSum(I * J, [&](int i, int j) {                 // ?_{i,j} ?[i,j]*x[i]*x[j]
+dsl::quadSum(I, [&](int i) { return X(i) * X(i); });    // sum_i x[i]^2
+dsl::quadSum(I * J, [&](int i, int j) {                 // sum_{i,j} sigma[i,j]*x[i]*x[j]
     return sigma[i][j] * X(i) * X(j);
 });
 ```
@@ -407,4 +407,3 @@ protected:
 4. **Master advanced topics:** Examples 08 (QP), 09 (VRP), 10 (patterns)
 
 Each example builds on concepts from earlier examples. The comments in each file explain both the optimization model and the DSL features used.
-
