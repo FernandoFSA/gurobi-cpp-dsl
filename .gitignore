@@ -1,0 +1,33 @@
+# Build directories
+build/
+out/
+cmake-build-*/
+
+# IDE files
+.vs/
+.vscode/
+*.vcxproj*
+*.sln*
+*.user
+.idea/
+
+# Compiled files
+*.obj
+*.o
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+*.ilp
+*.lp
+*.mps
+*.sol
