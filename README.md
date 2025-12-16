@@ -131,13 +131,19 @@ dsl::quadSum(I * J, [&](int i, int j) {
 ### Constraints
 
 ```cpp
-// Indexed constraint family
+// Single constraint
+auto con = dsl::ConstraintFactory::add(model, "budget",
+    [&](auto) { return dsl::sum(I, [&](int i) { return X(i); }) <= budget; });
+
+// Dense (indexed over rectangular domain)
 auto cons = dsl::ConstraintFactory::addIndexed(model, "demand", Customers,
     [&](int c) { 
-        return dsl::sum(Facilities, [&](int f) { 
-            return X(f, c); 
-        }) >= demand[c]; 
+        return dsl::sum(Facilities, [&](int f) { return X(f, c); }) >= demand[c]; 
     });
+
+// Sparse (indexed over filtered domain)
+auto sparse = dsl::ConstraintFactory::addIndexed(model, "arc", filteredArcs,
+    [&](int i, int j) { return X(i, j) <= capacity[i][j]; });
 ```
 
 ### Solution Access
@@ -222,3 +228,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Note:** This is an independent project and is not affiliated with or endorsed by Gurobi Optimization, LLC.
+

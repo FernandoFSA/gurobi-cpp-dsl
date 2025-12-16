@@ -344,10 +344,13 @@ endforeach()
 ### Index Domains
 ```cpp
 auto I = dsl::range(0, 10);           // Materialized: {0,1,...,9}
-auto R = dsl::range_view(0, 100);     // Lazy range
+auto R = dsl::range_view(0, 100);     // Lazy range (no allocation)
 auto P = I * J;                       // Cartesian product
 auto F = P | dsl::filter(predicate);  // Filtered domain
 ```
+
+> **Note:** Examples use `range()` for simplicity. For large domains (1000+ elements),
+> prefer `range_view()` to avoid memory allocation. Both support the same operations.
 
 ### Variables
 ```cpp
@@ -415,3 +418,4 @@ protected:
 4. **Master advanced topics:** Examples 08 (QP), 09 (VRP), 10 (patterns)
 
 Each example builds on concepts from earlier examples. The comments in each file explain both the optimization model and the DSL features used.
+

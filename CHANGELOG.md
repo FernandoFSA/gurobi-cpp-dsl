@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - 2024-12-XX
+## [1.0.0] - 2025-01-16
 
 ### Added
 
@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Expressions
 - `sum(domain, lambda)` for linear expression construction
-- `sum(VariableGroup)` and `sum(IndexedVariableSet)` overloads
+- `sum(VariableGroup)`, `sum(IndexedVariableSet)`, and `sum(VariableContainer)` overloads
 - `quadSum(domain, lambda)` for quadratic expressions (QP support)
 
 #### Solution Access
@@ -91,7 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Highlights |
 |---------|------|------------|
-| 1.0.0 | 2024-12 | Initial public release |
+| 1.0.0 | 2025-01-16 | Initial public release |
 
 [Unreleased]: https://github.com/FernandoFSA/gurobi-cpp-dsl/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/FernandoFSA/gurobi-cpp-dsl/releases/tag/v1.0.0
+
