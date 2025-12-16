@@ -354,10 +354,13 @@ auto F = P | dsl::filter(predicate);  // Filtered domain
 
 ### Variables
 ```cpp
-// Dense array
+// Scalar: single decision variable
+GRBVar z = dsl::VariableFactory::add(model, GRB_CONTINUOUS, 0, GRB_INFINITY, "z");
+
+// Dense: rectangular array of variables (1D, 2D, or N-D)
 auto X = dsl::VariableFactory::add(model, GRB_BINARY, 0, 1, "X", m, n);
 
-// Sparse (domain-based)
+// Sparse: variables only for specific index combinations
 auto Y = dsl::VariableFactory::addIndexed(model, GRB_CONTINUOUS, 0, 1, "Y", filteredDomain);
 ```
 
@@ -376,15 +379,15 @@ dsl::quadSum(I * J, [&](int i, int j) {                 // sum_{i,j} sigma[i,j]*
 
 ### Constraints
 ```cpp
-// Single constraint
+// Single: one standalone constraint
 auto con = dsl::ConstraintFactory::add(model, "name",
     [&](auto) { return expr <= rhs; });
 
-// Dense (indexed over rectangular domain)
+// Dense: constraint for each index in a rectangular domain
 auto cons = dsl::ConstraintFactory::addIndexed(model, "name", I * J,
     [&](int i, int j) { return expr <= rhs; });
 
-// Sparse (indexed over filtered domain)
+// Sparse: constraint only for specific index combinations
 auto sparse = dsl::ConstraintFactory::addIndexed(model, "name", filteredDomain,
     [&](int i, int j) { return expr <= rhs; });
 ```
@@ -418,4 +421,5 @@ protected:
 4. **Master advanced topics:** Examples 08 (QP), 09 (VRP), 10 (patterns)
 
 Each example builds on concepts from earlier examples. The comments in each file explain both the optimization model and the DSL features used.
+
 

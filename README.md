@@ -108,10 +108,13 @@ auto F = P | dsl::filter([](int i, int j) { return i < j; });
 ### Variables
 
 ```cpp
-// Dense arrays (rectangular)
+// Scalar: single decision variable
+GRBVar z = dsl::VariableFactory::add(model, GRB_CONTINUOUS, 0, GRB_INFINITY, "z");
+
+// Dense: rectangular array of variables (1D, 2D, or N-D)
 auto X = dsl::VariableFactory::add(model, GRB_BINARY, 0, 1, "x", m, n);
 
-// Sparse (filtered domains)
+// Sparse: variables only for specific index combinations
 auto Y = dsl::VariableFactory::addIndexed(model, GRB_CONTINUOUS, 0, 1, "y", 
     (I * J) | dsl::filter([](int i, int j) { return qualified[i][j]; }));
 ```
@@ -131,17 +134,17 @@ dsl::quadSum(I * J, [&](int i, int j) {
 ### Constraints
 
 ```cpp
-// Single constraint
+// Single: one standalone constraint
 auto con = dsl::ConstraintFactory::add(model, "budget",
     [&](auto) { return dsl::sum(I, [&](int i) { return X(i); }) <= budget; });
 
-// Dense (indexed over rectangular domain)
+// Dense: constraint for each index in a rectangular domain
 auto cons = dsl::ConstraintFactory::addIndexed(model, "demand", Customers,
     [&](int c) { 
         return dsl::sum(Facilities, [&](int f) { return X(f, c); }) >= demand[c]; 
     });
 
-// Sparse (indexed over filtered domain)
+// Sparse: constraint only for specific index combinations
 auto sparse = dsl::ConstraintFactory::addIndexed(model, "arc", filteredArcs,
     [&](int i, int j) { return X(i, j) <= capacity[i][j]; });
 ```
@@ -228,4 +231,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Note:** This is an independent project and is not affiliated with or endorsed by Gurobi Optimization, LLC.
+
 
